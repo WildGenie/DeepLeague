@@ -170,7 +170,7 @@ def _main(args):
             input_image_shape: [image.size[1], image.size[0]],
             K.learning_phase(): 0
         })
-    print('Found {} boxes for image.'.format(len(out_boxes)))
+    print(f'Found {len(out_boxes)} boxes for image.')
     print(out_boxes)
 
     # Plot image with predicted boxes.

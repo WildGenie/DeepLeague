@@ -70,7 +70,7 @@ def draw_boxes(image, boxes, box_classes, class_names, scores=None):
             score = scores[i]
             label = '{} {:.2f}'.format(box_class, score)
         else:
-            label = '{}'.format(box_class)
+            label = f'{box_class}'
 
         draw = ImageDraw.Draw(image)
         label_size = draw.textsize(label, font)
@@ -105,7 +105,7 @@ def visualize_game_data(game_data, folder):
         frame_obj = game_data[time_stamp]
         # not all frame objs have actual frames asscoiated with them!
         if frame_obj.frame_path is not None:
-            print("%s .... %s" % (frame_obj.time_obj.time_as_string, frame_obj.frame_path))
+            print(f"{frame_obj.time_obj.time_as_string} .... {frame_obj.frame_path}")
 
             x_val = int(frame_obj.game_snap['playerStats']['1']['x'])
             y_val = int(frame_obj.game_snap['playerStats']['1']['y'])
@@ -142,10 +142,7 @@ def visualize_npz_data(npz_file_path, all_classes, refresh_rate):
         print(boxes)
         img = Image.fromarray(image)
 
-        box_to_draw = []
-        for box in boxes:
-            box_to_draw.append([box[2], box[1], box[4], box[3]])
-
+        box_to_draw = [[box[2], box[1], box[4], box[3]] for box in boxes]
         print(boxes)
         img = np.array(img, dtype = np.uint8)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -172,7 +169,10 @@ def visualize_frames_on_drive(images_path, refresh_rate):
     for image_file in images:
         print(image_file)
         im = cv2.imread(images_path + image_file)
-        im2 = cv2.imread("/Users/flynn/Documents/DeepLeague/YAD2K/frames_no_labels/" + image_file)
+        im2 = cv2.imread(
+            f"/Users/flynn/Documents/DeepLeague/YAD2K/frames_no_labels/{image_file}"
+        )
+
         cv2.imshow("IMAGE", im)
         cv2.imshow("IMAGE2", im2)
         if cv2.waitKey(refresh_rate)  ==  ord('q'):

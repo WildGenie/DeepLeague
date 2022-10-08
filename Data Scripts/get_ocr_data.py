@@ -58,11 +58,12 @@ def make_image_data(folder, image_filenames):
 
 
 def request_ocr(api_key, folder, image_filenames):
-    response = requests.post(ENDPOINT_URL,
-                             data=make_image_data(folder, image_filenames),
-                             params={'key': api_key},
-                             headers={'Content-Type': 'application/json'})
-    return response
+    return requests.post(
+        ENDPOINT_URL,
+        data=make_image_data(folder, image_filenames),
+        params={'key': api_key},
+        headers={'Content-Type': 'application/json'},
+    )
 
 
 def create_data_json(folder):
@@ -80,109 +81,103 @@ def create_data_json(folder):
     # sort in numerical order
     sorted_files = sorted(image_paths, key=lambda x: int(x.split('_')[1].split(".")[0]))
 
-    # file we will write all data too
-    outfile = open(BASE_DATA_PATH + folder +  '/time_stamp_data_dirty.json', 'w')
-    print("Created game_data json (dirty) at folder ", folder)
-    outfile.write('[\n')
-    json.dump({'info': folder}, outfile)
-    outfile.write(',\n')
+    with open(BASE_DATA_PATH + folder +  '/time_stamp_data_dirty.json', 'w') as outfile:
+        print("Created game_data json (dirty) at folder ", folder)
+        outfile.write('[\n')
+        json.dump({'info': folder}, outfile)
+        outfile.write(',\n')
 
-    counter = 0
-    for i in range(0, len(sorted_files) - 15, 15):
-        counter = i
+        counter = 0
+        for i in range(0, len(sorted_files) - 15, 15):
+            counter = i
 
-    # we only want to process 15 images per request to keep things organized
-    for i in range(0, len(sorted_files) - 15, 15):
-        image_paths = []
-        if i % 100 == 0:
-            print("On frame %d out of %d" % (i, len(sorted_files) - 15))
+            # we only want to process 15 images per request to keep things organized
+        for i in range(0, len(sorted_files) - 15, 15):
+            if i % 100 == 0:
+                print("On frame %d out of %d" % (i, len(sorted_files) - 15))
 
-        for j in range(0, 15):
-            # just create a list of 15 files
-            image_paths.append(sorted_files[i + j])
-        response = request_ocr(API_KEY, folder, image_paths)
+            image_paths = [sorted_files[i + j] for j in range(15)]
+            response = request_ocr(API_KEY, folder, image_paths)
 
-        if response.status_code != 200 or response.json().get('error'):
-            print(response.text)
-        else:
-            global ocr_counter
-            ocr_counter += 15
-            if ocr_counter % 100:
-                print("OCR counter is currently at ", ocr_counter)
-            if ocr_counter > 250000:
-                sys.exit(1)
-            # print(len(response.json()['responses']))
-            # print(response.json()['responses'][-1])
-            # print(i)
-            # print(counter)
+            if response.status_code != 200 or response.json().get('error'):
+                print(response.text)
+            else:
+                global ocr_counter
+                ocr_counter += 15
+                if ocr_counter % 100:
+                    print("OCR counter is currently at ", ocr_counter)
+                if ocr_counter > 250000:
+                    sys.exit(1)
+                # print(len(response.json()['responses']))
+                # print(response.json()['responses'][-1])
+                # print(i)
+                # print(counter)
 
-            # TODO Really annoying problem here. Basically I need to be able to handle two cases when appending the final comma to the json
-            # 1. when i reach the END (this ones ez)
-            # 2. when i reach the last response, and the last item in the response is BAD. (ex. fails on regex)
-            for idx, resp in enumerate(response.json()['responses']):
-                if "textAnnotations" not in resp:
-                    continue
+                # TODO Really annoying problem here. Basically I need to be able to handle two cases when appending the final comma to the json
+                # 1. when i reach the END (this ones ez)
+                # 2. when i reach the last response, and the last item in the response is BAD. (ex. fails on regex)
+                for idx, resp in enumerate(response.json()['responses']):
+                    if "textAnnotations" not in resp:
+                        continue
 
-                t = resp['textAnnotations'][0]
-                time = t['description'].strip()
+                    t = resp['textAnnotations'][0]
+                    time = t['description'].strip()
 
-                imgname = image_paths[idx]
+                    imgname = image_paths[idx]
 
-                # check if time is in the proper format
-                # lots of times you get things like pauses, or replays, and we don't want those frames.
-                if reg.match(time) is None:
-                    continue
+                    # check if time is in the proper format
+                    # lots of times you get things like pauses, or replays, and we don't want those frames.
+                    if reg.match(time) is None:
+                        continue
 
-                # create json objct to save data
-                obj = {'file_name': imgname, 'time': time}
-                # save to JSON file
-                json.dump(obj, outfile)
+                    # create json objct to save data
+                    obj = {'file_name': imgname, 'time': time}
+                    # save to JSON file
+                    json.dump(obj, outfile)
 
-                # TODO make this prettier
-                if idx == len(response.json()['responses']) - 1 and counter - 14 <= i <= counter:
-                    continue
-                else:
-                    outfile.write(',\n')
+                    # TODO make this prettier
+                    if idx == len(response.json()['responses']) - 1 and counter - 14 <= i <= counter:
+                        continue
+                    else:
+                        outfile.write(',\n')
 
-    outfile.write(']\n')
-    outfile.close()
+        outfile.write(']\n')
 
 def create_clean_data_json(folder):
     try:
         frame_timestamp_data = json.load(open(BASE_DATA_PATH + folder + '/time_stamp_data_dirty.json', 'r'))
     except Exception as e:
-        print("JSON FAILED FOR %s CLEAN NEVER CREATED. FIX JSON." % folder)
+        print(f"JSON FAILED FOR {folder} CLEAN NEVER CREATED. FIX JSON.")
         return
-    outfile = open(BASE_DATA_PATH + folder + '/time_stamp_data_clean.json', 'w')
-    print("Created game_data json (clean) at folder ", folder)
-    first = True
-    prev_minutes = None
-    outfile.write('[\n')
-    json.dump({'info': folder}, outfile)
-    outfile.write(',\n')
+    with open(BASE_DATA_PATH + folder + '/time_stamp_data_clean.json', 'w') as outfile:
+        print("Created game_data json (clean) at folder ", folder)
+        first = True
+        prev_minutes = None
+        outfile.write('[\n')
+        json.dump({'info': folder}, outfile)
+        outfile.write(',\n')
 
-    for i, time_frame in enumerate(frame_timestamp_data):
-        # skip over first item in json
-        if first:
-            first = False
-            continue
-        time_obj = convert_string_time_to_easy_time(time_frame['time'])
-        curr_minutes = time_obj.minutes
-        if prev_minutes is not None:
-            # check if the time difference is greater than 5 min from prev frame.
-            # if so, its most likely an incorrect time returned from OCR.
-            if abs(curr_minutes - prev_minutes) > 5:
+        for i, time_frame in enumerate(frame_timestamp_data):
+            # skip over first item in json
+            if first:
+                first = False
                 continue
-        prev_minutes = curr_minutes
-        json.dump(time_frame, outfile)
+            time_obj = convert_string_time_to_easy_time(time_frame['time'])
+            curr_minutes = time_obj.minutes
+            if (
+                prev_minutes is not None
+                and abs(curr_minutes - prev_minutes) > 5
+            ):
+                continue
+            prev_minutes = curr_minutes
+            json.dump(time_frame, outfile)
 
-        if i == len(frame_timestamp_data) - 1:
-            continue
-        else:
-            outfile.write(',\n')
+            if i == len(frame_timestamp_data) - 1:
+                continue
+            else:
+                outfile.write(',\n')
 
-    outfile.write(']\n')
-    outfile.close()
+        outfile.write(']\n')
 
 if __name__ == '__main__':
     for folder_name in os.listdir(BASE_DATA_PATH):

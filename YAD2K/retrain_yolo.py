@@ -200,12 +200,15 @@ def _main(args):
     train_clusts = os.listdir('/media/student/DATA/clusters_cleaned/train/')
     val_clusts = os.listdir('/media/student/DATA/clusters_cleaned/val/')
 
-    train_clus_clean  = []
-    val_clus_clean = []
-    for folder_name in train_clusts:
-        train_clus_clean.append('/media/student/DATA/clusters_cleaned/train/' + folder_name)
-    for folder_name in val_clusts:
-        val_clus_clean.append('/media/student/DATA/clusters_cleaned/val/' + folder_name)
+    train_clus_clean = [
+        f'/media/student/DATA/clusters_cleaned/train/{folder_name}'
+        for folder_name in train_clusts
+    ]
+
+    val_clus_clean = [
+        f'/media/student/DATA/clusters_cleaned/val/{folder_name}'
+        for folder_name in val_clusts
+    ]
 
     data = TrainingData(train_clus_clean, val_clus_clean)
 
@@ -223,9 +226,9 @@ def _main(args):
     images = None
     boxes = None
 
-    images, boxes = process_data(data.val_images[0:500], data.val_boxes[0:500])
+    images, boxes = process_data(data.val_images[:500], data.val_boxes[:500])
     if debug:
-        images, boxes = process_data(data.val_images[0:10], data.val_boxes[0:10])
+        images, boxes = process_data(data.val_images[:10], data.val_boxes[:10])
     draw(model_body,
         class_names,
         anchors,
@@ -263,36 +266,35 @@ def process_data(images, boxes=None):
     processed_images = [np.array(image, dtype=np.float) for image in processed_images]
     processed_images = [image/255. for image in processed_images]
 
-    if boxes is not None:
-        # Box preprocessing.
-        # Original boxes stored as 1D list of class, x_min, y_min, x_max, y_max.
-        boxes = [box.reshape((-1, 5)) for box in boxes]
-        # Get extents as y_min, x_min, y_max, x_max, class for comparision with
-        # model output.
-        boxes_extents = [box[:, [2, 1, 4, 3, 0]] for box in boxes]
-
-        # Get box parameters as x_center, y_center, box_width, box_height, class.
-        boxes_xy = [0.5 * (box[:, 3:5] + box[:, 1:3]) for box in boxes]
-        boxes_wh = [box[:, 3:5] - box[:, 1:3] for box in boxes]
-        boxes_xy = [boxxy / orig_size for boxxy in boxes_xy]
-        boxes_wh = [boxwh / orig_size for boxwh in boxes_wh]
-        boxes = [np.concatenate((boxes_xy[i], boxes_wh[i], box[:, 0:1]), axis=1) for i, box in enumerate(boxes)]
-
-        # find the max number of boxes
-        max_boxes = 0
-        for boxz in boxes:
-            if boxz.shape[0] > max_boxes:
-                max_boxes = boxz.shape[0]
-
-        # add zero pad for training
-        for i, boxz in enumerate(boxes):
-            if boxz.shape[0]  < max_boxes:
-                zero_padding = np.zeros( (max_boxes-boxz.shape[0], 5), dtype=np.float32)
-                boxes[i] = np.vstack((boxz, zero_padding))
-
-        return np.array(processed_images), np.array(boxes)
-    else:
+    if boxes is None:
         return np.array(processed_images)
+    # Box preprocessing.
+    # Original boxes stored as 1D list of class, x_min, y_min, x_max, y_max.
+    boxes = [box.reshape((-1, 5)) for box in boxes]
+    # Get extents as y_min, x_min, y_max, x_max, class for comparision with
+    # model output.
+    boxes_extents = [box[:, [2, 1, 4, 3, 0]] for box in boxes]
+
+    # Get box parameters as x_center, y_center, box_width, box_height, class.
+    boxes_xy = [0.5 * (box[:, 3:5] + box[:, 1:3]) for box in boxes]
+    boxes_wh = [box[:, 3:5] - box[:, 1:3] for box in boxes]
+    boxes_xy = [boxxy / orig_size for boxxy in boxes_xy]
+    boxes_wh = [boxwh / orig_size for boxwh in boxes_wh]
+    boxes = [np.concatenate((boxes_xy[i], boxes_wh[i], box[:, 0:1]), axis=1) for i, box in enumerate(boxes)]
+
+    # find the max number of boxes
+    max_boxes = 0
+    for boxz in boxes:
+        if boxz.shape[0] > max_boxes:
+            max_boxes = boxz.shape[0]
+
+    # add zero pad for training
+    for i, boxz in enumerate(boxes):
+        if boxz.shape[0]  < max_boxes:
+            zero_padding = np.zeros( (max_boxes-boxz.shape[0], 5), dtype=np.float32)
+            boxes[i] = np.vstack((boxz, zero_padding))
+
+    return np.array(processed_images), np.array(boxes)
 
 def get_detector_mask(boxes, anchors):
     '''
@@ -302,8 +304,8 @@ def get_detector_mask(boxes, anchors):
     Matching true boxes gives the regression targets for the ground truth box
     that caused a detector to be active or 0 otherwise.
     '''
-    detectors_mask = [0 for i in range(len(boxes))]
-    matching_true_boxes = [0 for i in range(len(boxes))]
+    detectors_mask = [0 for _ in range(len(boxes))]
+    matching_true_boxes = [0 for _ in range(len(boxes))]
     for i, box in enumerate(boxes):
         detectors_mask[i], matching_true_boxes[i] = preprocess_true_boxes(box, anchors, [416, 416])
 
@@ -477,7 +479,7 @@ def draw(model_body, class_names, anchors, image_data, image_set='val',
                 input_image_shape: [image_data.shape[2], image_data.shape[3]],
                 K.learning_phase(): 0
             })
-        print('Found {} boxes for image.'.format(len(out_boxes)))
+        print(f'Found {len(out_boxes)} boxes for image.')
         print(out_boxes)
 
         # Plot image with predicted boxes.
@@ -486,7 +488,7 @@ def draw(model_body, class_names, anchors, image_data, image_set='val',
         # Save the image:
         if save_all or (len(out_boxes) > 0):
             image = PIL.Image.fromarray(image_with_boxes)
-            image.save(os.path.join(out_path,str(i)+'.png'))
+            image.save(os.path.join(out_path, f'{str(i)}.png'))
 
         # To display (pauses the program):
         # plt.imshow(image_with_boxes, interpolation='nearest')

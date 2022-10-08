@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 """Run a YOLO_v2 style detection model on test images."""
+
 import argparse
 import colorsys
 import imghdr
@@ -146,7 +147,7 @@ if args.subcommand == 'youtube':
 
 
 if not os.path.exists(output_path):
-    print('Creating output path {}'.format(output_path))
+    print(f'Creating output path {output_path}')
     os.mkdir(output_path)
 
 sess = K.get_session()  # TODO: Remove dependence on Tensorflow session.
@@ -173,7 +174,7 @@ assert model_output_channels == num_anchors * (num_classes + 5), \
     'Mismatch between model and given anchor and class sizes. ' \
     'Specify matching anchors and classes with --anchors_path and ' \
     '--classes_path flags.'
-print('{} model, anchors, and classes loaded.'.format(model_path))
+print(f'{model_path} model, anchors, and classes loaded.')
 
 # Check if model is fully convolutional, assuming channel last order.
 model_image_size = yolo_model.layers[0].input_shape[1:3]
@@ -231,7 +232,7 @@ def test_yolo(image, image_file_name):
             K.learning_phase(): 0
         })
 
-    print('Found {} boxes for {}'.format(len(out_boxes), image_file_name))
+    print(f'Found {len(out_boxes)} boxes for {image_file_name}')
 
     # Write data to a JSON file located within the 'output/' directory.
     # This ASSUMES that the game comes from a spectated video starting at 0:00
@@ -242,10 +243,7 @@ def test_yolo(image, image_file_name):
         size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
     thickness = (image.size[0] + image.size[1]) // 300
 
-    data = {}
-    data['timestamp'] = '0:00'
-    data['champs'] = {}
-
+    data = {'timestamp': '0:00', 'champs': {}}
     for i, c in reversed(list(enumerate(out_classes))):
         predicted_class = class_names[c]
         box = out_boxes[i]
@@ -317,7 +315,7 @@ def process_mp4(test_mp4_vod_path):
         if count %  fps == 0:
             im = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             im = Image.fromarray(im).crop((1625, 785, 1920, 1080))
-            test_yolo(im, str(file_count) + '.jpg')
+            test_yolo(im, f'{str(file_count)}.jpg')
             file_count += 1
         count += 1
 
@@ -341,7 +339,7 @@ def _main():
 
         for image_index, image_arr in enumerate(images):
             image = Image.fromarray(image_arr)
-            test_yolo(image, str(image_index) + '.jpg')
+            test_yolo(image, f'{str(image_index)}.jpg')
 
     if args.subcommand == 'mp4':
         process_mp4(test_mp4_vod_path)
@@ -349,17 +347,35 @@ def _main():
     if args.subcommand == 'youtube':
         youtube_download_path = os.path.dirname(os.path.abspath(__file__))
         youtube_download_path = os.path.join(youtube_download_path, "output")
-        if os.path.exists(youtube_download_path + '/vod.mp4'):
-            os.remove(youtube_download_path + '/vod.mp4')
-        ydl_opts = {'outtmpl': youtube_download_path + '/' + 'vod_full.%(ext)s', 'format': '137'}
+        if os.path.exists(f'{youtube_download_path}/vod.mp4'):
+            os.remove(f'{youtube_download_path}/vod.mp4')
+        ydl_opts = {
+            'outtmpl': f'{youtube_download_path}/vod_full.%(ext)s',
+            'format': '137',
+        }
+
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download([test_youtube_link])
         # TODO test this on other systems.
         print("Calling ffmpeg to cut up video")
-        call(['ffmpeg', '-i', youtube_download_path + '/vod_full.mp4', '-ss', start_time, '-to', end_time, '-c', 'copy', youtube_download_path + '/vod.mp4'])
-        os.remove(youtube_download_path + '/vod_full.mp4')
+        call(
+            [
+                'ffmpeg',
+                '-i',
+                f'{youtube_download_path}/vod_full.mp4',
+                '-ss',
+                start_time,
+                '-to',
+                end_time,
+                '-c',
+                'copy',
+                f'{youtube_download_path}/vod.mp4',
+            ]
+        )
+
+        os.remove(f'{youtube_download_path}/vod_full.mp4')
         print("Done with ffmpeg")
-        process_mp4(youtube_download_path + '/vod.mp4')
+        process_mp4(f'{youtube_download_path}/vod.mp4')
 
     sess.close()
 

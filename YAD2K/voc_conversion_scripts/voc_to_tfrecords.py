@@ -111,39 +111,49 @@ def convert_to_example(image_data, boxes, filename, height, width):
     encoded_image = [tf.compat.as_bytes(image_data)]
     base_name = [tf.compat.as_bytes(os.path.basename(filename))]
 
-    example = tf.train.Example(features=tf.train.Features(feature={
-        'filename':
-        tf.train.Feature(bytes_list=tf.train.BytesList(value=base_name)),
-        'height':
-        tf.train.Feature(int64_list=tf.train.Int64List(value=[height])),
-        'width':
-        tf.train.Feature(int64_list=tf.train.Int64List(value=[width])),
-        'classes':
-        tf.train.Feature(int64_list=tf.train.Int64List(value=box_classes)),
-        'y_mins':
-        tf.train.Feature(float_list=tf.train.FloatList(value=box_ymin)),
-        'x_mins':
-        tf.train.Feature(float_list=tf.train.FloatList(value=box_xmin)),
-        'y_maxes':
-        tf.train.Feature(float_list=tf.train.FloatList(value=box_ymax)),
-        'x_maxes':
-        tf.train.Feature(float_list=tf.train.FloatList(value=box_xmax)),
-        'encoded':
-        tf.train.Feature(bytes_list=tf.train.BytesList(value=encoded_image))
-    }))
-    return example
+    return tf.train.Example(
+        features=tf.train.Features(
+            feature={
+                'filename': tf.train.Feature(
+                    bytes_list=tf.train.BytesList(value=base_name)
+                ),
+                'height': tf.train.Feature(
+                    int64_list=tf.train.Int64List(value=[height])
+                ),
+                'width': tf.train.Feature(
+                    int64_list=tf.train.Int64List(value=[width])
+                ),
+                'classes': tf.train.Feature(
+                    int64_list=tf.train.Int64List(value=box_classes)
+                ),
+                'y_mins': tf.train.Feature(
+                    float_list=tf.train.FloatList(value=box_ymin)
+                ),
+                'x_mins': tf.train.Feature(
+                    float_list=tf.train.FloatList(value=box_xmin)
+                ),
+                'y_maxes': tf.train.Feature(
+                    float_list=tf.train.FloatList(value=box_ymax)
+                ),
+                'x_maxes': tf.train.Feature(
+                    float_list=tf.train.FloatList(value=box_xmax)
+                ),
+                'encoded': tf.train.Feature(
+                    bytes_list=tf.train.BytesList(value=encoded_image)
+                ),
+            }
+        )
+    )
 
 
 def get_image_path(voc_path, year, image_id):
     """Get path to image for given year and image id."""
-    return os.path.join(voc_path, 'VOC{}/JPEGImages/{}.jpg'.format(year,
-                                                                   image_id))
+    return os.path.join(voc_path, f'VOC{year}/JPEGImages/{image_id}.jpg')
 
 
 def get_anno_path(voc_path, year, image_id):
     """Get path to image annotation for given year and image id."""
-    return os.path.join(voc_path, 'VOC{}/Annotations/{}.xml'.format(year,
-                                                                    image_id))
+    return os.path.join(voc_path, f'VOC{year}/Annotations/{image_id}.xml')
 
 
 def process_dataset(name, image_paths, anno_paths, result_path, num_shards):
@@ -194,11 +204,9 @@ def process_dataset(name, image_paths, anno_paths, result_path, num_shards):
                 print('{} : Processed {:d} of {:d} images.'.format(
                     datetime.now(), counter, len(image_paths)))
         writer.close()
-        print('{} : Wrote {} images to {}'.format(
-            datetime.now(), shard_counter, output_filename))
+        print(f'{datetime.now()} : Wrote {shard_counter} images to {output_filename}')
 
-    print('{} : Wrote {} images to {} shards'.format(datetime.now(), counter,
-                                                     num_shards))
+    print(f'{datetime.now()} : Wrote {counter} images to {num_shards} shards')
 
 
 def _main(args):
@@ -206,7 +214,7 @@ def _main(args):
     voc_path = args.path_to_voc
     voc_path = os.path.expanduser(voc_path)
     result_path = os.path.join(voc_path, 'TFRecords')
-    print('Saving results to {}'.format(result_path))
+    print(f'Saving results to {result_path}')
 
     train_path = os.path.join(result_path, 'train')
     test_path = os.path.join(result_path, 'test')
@@ -215,8 +223,7 @@ def _main(args):
     test_ids = get_ids(voc_path, test_set)  # 2007 test
     train_ids_2007 = get_ids(voc_path, sets_from_2007)  # 2007 trainval
     total_train_ids = len(train_ids) + len(train_ids_2007)
-    print('{} train examples and {} test examples'.format(total_train_ids,
-                                                          len(test_ids)))
+    print(f'{total_train_ids} train examples and {len(test_ids)} test examples')
 
     train_image_paths = [
         get_image_path(voc_path, '2012', i) for i in train_ids

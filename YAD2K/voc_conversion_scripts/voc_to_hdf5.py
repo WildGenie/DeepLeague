@@ -54,8 +54,7 @@ def get_boxes_for_id(voc_path, year, image_id):
         bounding box annotations of class label, xmin, ymin, xmax, ymax as a
         5xN array.
     """
-    fname = os.path.join(voc_path, 'VOC{}/Annotations/{}.xml'.format(year,
-                                                                     image_id))
+    fname = os.path.join(voc_path, f'VOC{year}/Annotations/{image_id}.xml')
     with open(fname) as in_file:
         xml_tree = ElementTree.parse(in_file)
     root = xml_tree.getroot()
@@ -92,8 +91,7 @@ def get_image_for_id(voc_path, year, image_id):
     image_data : array of uint8
         Compressed JPEG byte string represented as array of uint8.
     """
-    fname = os.path.join(voc_path, 'VOC{}/JPEGImages/{}.jpg'.format(year,
-                                                                    image_id))
+    fname = os.path.join(voc_path, f'VOC{year}/JPEGImages/{image_id}.jpg')
     with open(fname, 'rb') as in_file:
         data = in_file.read()
     # Use of encoding based on: https://github.com/h5py/h5py/issues/745
@@ -117,8 +115,7 @@ def get_ids(voc_path, datasets):
     """
     ids = []
     for year, image_set in datasets:
-        id_file = os.path.join(voc_path, 'VOC{}/ImageSets/Main/{}.txt'.format(
-            year, image_set))
+        id_file = os.path.join(voc_path, f'VOC{year}/ImageSets/Main/{image_set}.txt')
         with open(id_file, 'r') as image_ids:
             ids.extend(map(str.strip, image_ids.readlines()))
     return ids

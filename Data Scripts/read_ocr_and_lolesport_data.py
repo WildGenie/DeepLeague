@@ -31,13 +31,13 @@ def get_game_data_dict(folder):
     try:
         json_file = json.load(open(BASE_DATA_PATH + folder + '/socket.json', 'r'))
     except Exception as e:
-        print('FARZA FIX SOCKET JSON FOR ' + folder)
+        print(f'FARZA FIX SOCKET JSON FOR {folder}')
         return None
 
     try:
         json_file = json.load(open(BASE_DATA_PATH + folder + '/time_stamp_data_clean.json', 'r'))
     except Exception as e:
-        print('FARZA FIX time stamp JSON FOR ' + folder)
+        print(f'FARZA FIX time stamp JSON FOR {folder}')
         return None
 
     game_data = create_data(folder)
@@ -73,13 +73,14 @@ def create_data(folder):
         # using json data created by ocr, figure out the time of the game time of the current real game image
         time_obj = convert_string_time_to_easy_time(time_frame['time'])
         # only keep game frame if it has a game_snap associated with it.
-        if time_obj.time_as_string in new_full_game_data:
-            # only keep game frame if it has an actual frame associated with it
-            if new_full_game_data[time_obj.time_as_string].frame_path == None:
-                if 'file_name' in time_frame:
-                    new_full_game_data[time_obj.time_as_string].frame_path = time_frame['file_name']
-                elif 'file_narme' in time_frame:
-                    new_full_game_data[time_obj.time_as_string].frame_path = time_frame['file_narme']
+        if (
+            time_obj.time_as_string in new_full_game_data
+            and new_full_game_data[time_obj.time_as_string].frame_path is None
+        ):
+            if 'file_name' in time_frame:
+                new_full_game_data[time_obj.time_as_string].frame_path = time_frame['file_name']
+            elif 'file_narme' in time_frame:
+                new_full_game_data[time_obj.time_as_string].frame_path = time_frame['file_narme']
 
     return new_full_game_data
 
