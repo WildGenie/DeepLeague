@@ -23,11 +23,19 @@ def check_champs(json_file, champ_dict, folder_name):
     print(frame_list)
 
     # we only want to throw away the game if all 10 champs are included and one of them have frames > 100000
-    if len(frame_list) != 0 and len(frame_list) == 10 and any(i >= 50000 for i in frame_list):
+    if (
+        frame_list
+        and len(frame_list) == 10
+        and any(i >= 50000 for i in frame_list)
+    ):
         return
     # throw away game if we already have 20000+ frames for all 10 champs in this game.
     # this is equivalent to around 10 games of data.
-    if len(frame_list) != 0 and len(frame_list) == 10 and all(i >= 20000 for i in frame_list):
+    if (
+        frame_list
+        and len(frame_list) == 10
+        and all(i >= 20000 for i in frame_list)
+    ):
         return
 
     for i in range(1, 11):

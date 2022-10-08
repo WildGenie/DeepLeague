@@ -38,9 +38,7 @@ def sort_files_numerically(full_path_to_files):
         if(file.split(".")[1] != "jpg"):
             files.remove(file)
 
-    # trick to sort files in numerical order given format "frame_#.jpg"
-    sorted_files = sorted(files, key=lambda x: int(x.split(".")[0]))
-    return sorted_files
+    return sorted(files, key=lambda x: int(x.split(".")[0]))
 
 
 def do_template_match(crop, mini_map_img, template):
@@ -58,11 +56,10 @@ def do_template_match(crop, mini_map_img, template):
 
     print((crop[0], crop[2]), (crop[1], crop[3]))
 
-    if min_val < 0.05:
-        cv2.rectangle(display_image, (crop[2], crop[0]), (crop[3], crop[1]), 255, 2)
-        return True
-    else:
+    if min_val >= 0.05:
         return False
+    cv2.rectangle(display_image, (crop[2], crop[0]), (crop[3], crop[1]), 255, 2)
+    return True
 
 # returns a dictionary indicating which jungle camps are "seen" by the template match.
 def camps_seen_for_frame(path_to_frame):
@@ -140,4 +137,4 @@ def camps_seen_for_frame(path_to_frame):
 
 if __name__ == '__main__':
     for image_path in sort_files_numerically('frames/'):
-        camps_seen = camps_seen_for_frame('frames/' + image_path)
+        camps_seen = camps_seen_for_frame(f'frames/{image_path}')

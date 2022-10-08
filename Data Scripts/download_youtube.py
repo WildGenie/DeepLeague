@@ -29,33 +29,51 @@ with open(CSV_FILE_PATH, 'rt') as csvfile:
         print("Folder ", folder_name)
 
         check_me.append(folder_name)
-        if not os.path.exists('data/' + folder_name):
+        if not os.path.exists(f'data/{folder_name}'):
             print("Creating output path for ", folder_name)
-            os.mkdir('data/' + folder_name)
+            os.mkdir(f'data/{folder_name}')
 
         # if we already have the video move on!
-        if os.path.exists('data/' + folder_name + '/vod.mp4'):
+        if os.path.exists(f'data/{folder_name}/vod.mp4'):
             continue
 
-        if os.path.exists('new_games/games/' + json_file + '.json'):
-            if not os.path.exists('data/' + folder_name + '/socket.json'):
+        if os.path.exists(f'new_games/games/{json_file}.json'):
+            if not os.path.exists(f'data/{folder_name}/socket.json'):
                 print("JSON File exists for %s in the completed_games folder", folder_name)
-                shutil.copy('new_games/games/' + json_file + '.json','data/' + folder_name + '/socket.json')
+                shutil.copy(
+                    f'new_games/games/{json_file}.json',
+                    f'data/{folder_name}/socket.json',
+                )
+
                 print('Copied to folder in "ta" directory!')
 
         else:
             print("JSON file %s for %s didn't exist!" % (json_file, folder_name))
             sys.exit(1)
 
-        ydl_opts = {'outtmpl': 'data/' + folder_name + '/' + 'vod_full.%(ext)s', 'format': '137'}
+        ydl_opts = {'outtmpl': f'data/{folder_name}/vod_full.%(ext)s', 'format': '137'}
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             ydl.download([link])
             info_dict = ydl.extract_info(link, download=False)
             video_title = info_dict.get('title', None)
 
         print("Calling ffmpeg")
-        call(['ffmpeg', '-i', 'data/' +  folder_name + '/vod_full.mp4', '-ss', start_time, '-to', end_time, '-c', 'copy', 'data/' + folder_name + '/vod.mp4'])
-        os.remove('data/' +  folder_name + '/vod_full.mp4')
+        call(
+            [
+                'ffmpeg',
+                '-i',
+                f'data/{folder_name}/vod_full.mp4',
+                '-ss',
+                start_time,
+                '-to',
+                end_time,
+                '-c',
+                'copy',
+                f'data/{folder_name}/vod.mp4',
+            ]
+        )
+
+        os.remove(f'data/{folder_name}/vod_full.mp4')
         print("Done with ffmpeg")
 if len(check_me) != len(set(check_me)):
     print("NOT EQUAL")

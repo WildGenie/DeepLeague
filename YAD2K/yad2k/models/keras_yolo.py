@@ -302,8 +302,7 @@ def yolo(inputs, anchors, num_classes):
     """Generate a complete YOLO_v2 localization model."""
     num_anchors = len(anchors)
     body = yolo_body(inputs, num_anchors, num_classes)
-    outputs = yolo_head(body.output, anchors, num_classes)
-    return outputs
+    return yolo_head(body.output, anchors, num_classes)
 
 
 def yolo_filter_boxes(boxes, box_confidence, box_class_probs, threshold=.6):
@@ -392,8 +391,10 @@ def preprocess_true_boxes(true_boxes, anchors, image_size):
     for box in true_boxes:
         # scale box to convolutional feature spatial dimensions
         box_class = box[4:5]
-        box = box[0:4] * np.array(
-            [conv_width, conv_height, conv_width, conv_height])
+        box = box[:4] * np.array(
+            [conv_width, conv_height, conv_width, conv_height]
+        )
+
         i = np.floor(box[1]).astype('int')
         j = np.floor(box[0]).astype('int')
         best_iou = 0

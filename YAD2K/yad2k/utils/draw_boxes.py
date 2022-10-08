@@ -62,7 +62,7 @@ def draw_boxes(image, boxes, box_classes, class_names, scores=None):
             score = scores[i]
             label = '{} {:.2f}'.format(box_class, score)
         else:
-            label = '{}'.format(box_class)
+            label = f'{box_class}'
 
         draw = ImageDraw.Draw(image)
         label_size = draw.textsize(label, font)

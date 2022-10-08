@@ -10,19 +10,17 @@ from paths import BASE_DATA_PATH
 def get_frames():
     for folder in os.listdir(BASE_DATA_PATH):
         print("Currently on ", folder)
-        if os.path.isdir(BASE_DATA_PATH + folder):
-            items = os.listdir(BASE_DATA_PATH + folder)
-            if 'frames' not in items:
-                print("Creating frames dir... ")
-                os.mkdir(BASE_DATA_PATH + folder + '/frames')
-            # skip if frames are already done for that folder
-            else:
-                print("Frames already exists. skipping...")
-                continue
-        # skip non-folders
-        else:
+        if not os.path.isdir(BASE_DATA_PATH + folder):
             continue
-        video = cv2.VideoCapture(BASE_DATA_PATH + '%s/vod.mp4' % folder)
+        items = os.listdir(BASE_DATA_PATH + folder)
+        if 'frames' not in items:
+            print("Creating frames dir... ")
+            os.mkdir(BASE_DATA_PATH + folder + '/frames')
+        # skip if frames are already done for that folder
+        else:
+            print("Frames already exists. skipping...")
+            continue
+        video = cv2.VideoCapture(f'{BASE_DATA_PATH}{folder}/vod.mp4')
 
         # forward over to the frames you want to start reading from.
         # manually set this, fps * time in seconds you wanna start from

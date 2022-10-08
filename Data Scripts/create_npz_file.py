@@ -29,9 +29,10 @@ def get_box_for_champ(champ_index, frame_obj):
 
 # a champ is dead when its x/y is 0. we want to throw these away.
 def dead(frame_obj, champ_index):
-    if  frame_obj.game_snap['playerStats'][champ_index]['x'] == 0 and frame_obj.game_snap['playerStats'][champ_index]['y'] == 0:
-        return True
-    return False
+    return (
+        frame_obj.game_snap['playerStats'][champ_index]['x'] == 0
+        and frame_obj.game_snap['playerStats'][champ_index]['y'] == 0
+    )
 
 def check_boxes_for_champs_in_dict(frame_obj):
     boxes_in_frame = []
@@ -56,17 +57,15 @@ def check_boxes_for_champs_in_dict(frame_obj):
             continue
 
         boxes_in_frame.append(box)
-    if len(boxes_in_frame) == 0:
-        return boxes_in_frame, True
-    return boxes_in_frame, False
+    return (boxes_in_frame, False) if boxes_in_frame else (boxes_in_frame, True)
 
 def get_bounding_boxes_and_images(game_data, folder):
     all_boxes = []
     all_images = []
 
     counter = 0
+    boxes_in_timestamp = []
     for time_stamp in game_data:
-        boxes_in_timestamp = []
         frame_obj = game_data[time_stamp]
         if frame_obj.frame_path is not None:
 
@@ -152,11 +151,26 @@ def create_cluster_from_folders(folder_list, iterator):
     # train_images, val_images, test_images = train_images.tolist(), val_images.tolist(), test_images.tolist()
     # train_boxes, val_boxes, test_boxes = train_boxes.tolist(), val_boxes.tolist(), test_boxes.tolist()
 
-    np.savez("/Volumes/DATA/clusters_cleaned/train/data_training_set_cluster_" + str(iterator), images=train_images, boxes=train_boxes)
-    np.savez("/Volumes/DATA/clusters_cleaned/test/data_test_set_cluster_" + str(iterator), images=test_images, boxes=test_boxes)
-    np.savez("/Volumes/DATA/clusters_cleaned/val/data_val_set_cluster_" + str(iterator), images=val_images, boxes=val_boxes)
+    np.savez(
+        f"/Volumes/DATA/clusters_cleaned/train/data_training_set_cluster_{str(iterator)}",
+        images=train_images,
+        boxes=train_boxes,
+    )
 
-    print("Saved @ # " + str(iterator))
+    np.savez(
+        f"/Volumes/DATA/clusters_cleaned/test/data_test_set_cluster_{str(iterator)}",
+        images=test_images,
+        boxes=test_boxes,
+    )
+
+    np.savez(
+        f"/Volumes/DATA/clusters_cleaned/val/data_val_set_cluster_{str(iterator)}",
+        images=val_images,
+        boxes=val_boxes,
+    )
+
+
+    print(f"Saved @ # {str(iterator)}")
 
 
 
@@ -164,7 +178,5 @@ if __name__ == '__main__':
     folder_list, label_dict_yolo = get_me_folders_and_label_dict()
     chunks_of_folders = [folder_list[i:i + 10] for i in range(0, len(folder_list), 10)]
 
-    iterator = 0
-    for chunk in chunks_of_folders:
+    for iterator, chunk in enumerate(chunks_of_folders):
         create_cluster_from_folders(chunk, iterator)
-        iterator += 1
